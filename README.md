@@ -60,9 +60,9 @@ volumes:
 
 
 Текущие директории в них установлены как корневые:
-vi@...:~$  docker exec -it vi-kafka-1 pwd
+$  docker exec -it vi-kafka-1 pwd
 /
-vi@...:~$ docker exec -it vi-zookeeper-1  pwd
+$ docker exec -it vi-zookeeper-1  pwd
 /
 
 Инструкции по работе с этим контейнером находятся здесь:
