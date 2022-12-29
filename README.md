@@ -5,21 +5,55 @@
 У меня изначально не получалось запустить докер в ubuntu, поскольку требовалось настроить конфигурацию. 
 
 Я нашел актуальный образ ubuntu 20.04
-![Текст с описанием картинки](/images/picture.jpg)
+
+![ubuntu 20.04](/images/picture.png)
+
 Но выяснилось, что для того, чтобы запустить докер в убунте из-под wsl 2, потребовалось активировать конфигурацию wsl2 в настройках docker в самом windows, 
 и применить команду трансформации в power shell:   wsl --set-version Ubuntu 2 
 
 Для разворачивания Kafka в Ubuntu проверяем, что изменение версии корректно, и только после этого запускаем Ubuntu:
 
 PS C:\Users\vyuivanov> wsl -l -v
+  NAME                   STATE           VERSION
+* Ubuntu                 Running         2
+
+А теперь выполяем запуск:
 PS C:\Users\vyuivanov> wsl --distribution Ubuntu --user vi
 
 Находясь в Ubuntu, я нашел два образа kafka, ubuntu/kafka и bitnami/kafka
 но хорошо сработал именно последний:
+vi@...:~$  docker pull ubuntu/kafka
+...
+docker.io/ubuntu/kafka:latest
+
+vi@...:~$ docker pull bitnami/kafka
+...
+docker.io/bitnami/kafka:latest
 
 
 Теперь, когда этот образ есть, можем выполнить его запуск:
+vi@...:~$  curl -sSL https://raw.githubusercontent.com/bitnami/containers/main/bitnami/kafka/docker-compose.yml > docker-compose.yml
+vi@...:~$ docker-compose up -d
+
+Результат запуска такой:
+[+] Running 4/4
+ ⠿ kafka Pulled                                                                                                                                                                                              37.4s
+ ⠿ zookeeper Pulled                                                                                                                                                                                          69.0s
+   ⠿ f8c1c832ce65 Already exists                                                                                                                                                                              0.0s
+   ⠿ bfe5e86e413f Pull complete                                                                                                                                                                              31.0s
+[+] Running 5/5
+ ⠿ Network vi_default          Created                                                                                                                                                                        0.7s
+ ⠿ Volume "vi_zookeeper_data"  Created                                                                                                                                                                        0.0s
+ ⠿ Volume "vi_kafka_data"      Created                                                                                                                                                                        0.0s
+ ⠿ Container vi-zookeeper-1    Started                                                                                                                                                                        1.6s
+ ⠿ Container vi-kafka-1        Started                                                                                                                                                                        2.6s
+
+
 Посмотрим теперь на запущенные контейнеры docker:
+vi@...:~$ docker ps
+CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS          PORTS                                                                     NAMES
+d5a7642e45d0   bitnami/kafka:3.3       "/opt/bitnami/script…"   41 minutes ago   Up 41 minutes   0.0.0.0:9092->9092/tcp, :::9092->9092/tcp                                 vi-kafka-1
+31df1c2b4804   bitnami/zookeeper:3.8   "/opt/bitnami/script…"   41 minutes ago   Up 41 minutes   2888/tcp, 3888/tcp, 0.0.0.0:2181->2181/tcp, :::2181->2181/tcp, 8080/tcp   vi-zookeeper-1
 
 Для наглядности: это bitnami/kafka:3.3 (ID d5a7642e45d0) и  
                                     bitnami/zookeeper:3.8(ID 31df1c2b4804), их имена и порты:
@@ -58,13 +92,6 @@ volumes:
   kafka_data:
     driver: local
 
-
-Текущие директории в них установлены как корневые:
-$  docker exec -it vi-kafka-1 pwd
-/
-$ docker exec -it vi-zookeeper-1  pwd
-/
-
 Инструкции по работе с этим контейнером находятся здесь:
 https://hub.docker.com/r/bitnami/kafka
 
@@ -72,21 +99,25 @@ https://hub.docker.com/r/bitnami/kafka
 клиент.
 
 Шаг 1: Создаем сеть
+vi@...:~$ docker network create app-tier --driver bridge
+d711af7abeebcc8bc563175558ec8c01609757371aab387c6e5cf3cd12b4a49e
+
 Шаг 2: Запускаем экземпляр сервера Zookeeper
+vi@...:~$ docker run -d --name kafka-server --network app-tier -e ALLOW_PLAINTEXT_LISTENER=yes -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 bitnami/kafka:latest
+edbdf24b80736c21d6f4125e6485969fbb3937571fb605a7177fe4e17a1bfe98
+
 Шаг 3. Запускаем экземпляр клиента Apache Kafka
+vi@...:~$ docker run -it --rm --network app-tier -e KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181 bitnami/kafka:latest kafka-topics.sh --list  --bootstrap-server kafka-server:9092
+kafka 16:34:13.37
+kafka 16:34:13.37 Welcome to the Bitnami kafka container
+kafka 16:34:13.37 Subscribe to project updates by watching https://github.com/bitnami/containers
+kafka 16:34:13.37 Submit issues and feature requests at https://github.com/bitnami/containers/issues
 
-На текущий момент, при выполнении последней инструкции мы получили предупреждение:
+А теперь создаём топик:
+vi@...:~$ docker exec vi-kafka-1 kafka-topics.sh --bootstrap-server localhost:9092 --create --topic orders --partitions 1 --replication-factor 1
+Created topic orders.
+vi@...:~$ docker exec vi-kafka-1 kafka-topics.sh --bootstrap-server localhost:9092 --list
+orders
 
-Такая проблема описана здесь: 
-https://stackoverflow.com/questions/66590997/kafka-server-issue-in-docker
-
-А именно, мы узнаем следующее:
-Вы пытаетесь связаться с kafka:9092, но docker compose сгенерировал контейнер kafka_1, поэтому разрешение имени отсутствует.
-
-Docker дает внутренний IP-адрес вашим контейнерам и использует их имя контейнера для создания внутреннего DNS в этой сети (со встроенным DNS-сервером).
-Docker Compose не изменяет ваши переменные среды, чтобы они соответствовали имени, которое он дает вашему контейнеру.
-Вы должны использовать «container_name: kafka» в описании вашего контейнера, чтобы получить статическое имя контейнера.
-
-Всё же, попробуем теперь создать топик:
 Мы видим, что топик “orders” появился:
 Далее можно будет попробовать организовать отправку сообщений на этот топик.
