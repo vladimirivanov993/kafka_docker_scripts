@@ -28,7 +28,7 @@ vi-kafka-1          0.0.0.0:9092->9092/tcp, :::9092->9092/tcp
 vi-zookeeper-1  2888/tcp, 3888/tcp, 0.0.0.0:2181->2181/tcp, :::2181->2181/tcp, 8080/tcp\\
 
 В конфигурации этих контейнеров прописано следующее:
-vi@5CD202H0R9:~$ cat docker-compose.yml
+vi@...:~$ cat docker-compose.yml
 version: "2"
 
 services:
@@ -60,9 +60,9 @@ volumes:
 
 
 Текущие директории в них установлены как корневые:
-vi@5CD202H0R9:~$ docker exec -it vi-kafka-1 pwd
+vi@...:~$  docker exec -it vi-kafka-1 pwd
 /
-vi@5CD202H0R9:~$ docker exec -it vi-zookeeper-1  pwd
+vi@...:~$ docker exec -it vi-zookeeper-1  pwd
 /
 
 Инструкции по работе с этим контейнером находятся здесь:
