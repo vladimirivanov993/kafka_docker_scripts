@@ -1,19 +1,16 @@
 # kafka_docker_scripts
 
-Краткое описание действий по поиску и запуска дистрибутива kafka в ubuntu из docker при использовании технологии wsl:
+Описание действий по поиску и запуска дистрибутива Apache Kafka в Ubuntu из Docker при использовании технологии WSL 2(Windows Subsystem for Linux):
 
-У меня изначально не получалось запустить докер в ubuntu, поскольку требовалось настроить конфигурацию. 
-
-Я нашел актуальный образ ubuntu 20.04
+Используем образ Ubuntu 20.04
 
 ![ubuntu 20.04](/images/picture.png)
 
-Но выяснилось, что для того, чтобы запустить докер в убунте из-под wsl 2, потребовалось активировать конфигурацию wsl2 в настройках docker в самом windows, 
-и применить команду трансформации в Power Shell:   
+Для использования *WSL 2* нужно активировать эту конфигурацию в настройках Docker в самом Windows 10, 
+и применить команду трансформации образа Ubuntu в Power Shell:   
 ```wsl --set-version Ubuntu 2``` 
 
-Для разворачивания Kafka в Ubuntu проверяем, что изменение версии корректно, и только после этого запускаем Ubuntu:
-
+Для разворачивания Kafka в Ubuntu проверяем, что изменение версии корректно, и запускаем Ubuntu: 
 ```PS C:\Users\user> wsl -l -v```
 ```
   NAME                   STATE           VERSION
@@ -22,16 +19,13 @@
 А теперь выполяем запуск:
 ```PS C:\Users\vyuivanov> wsl --distribution Ubuntu --user vi```
 
-Находясь в Ubuntu, я нашел два образа kafka, ubuntu/kafka и bitnami/kafka
-но хорошо сработал именно последний:
+Есть несколько образов Kafka, это "ubuntu/kafka" и "bitnami/kafka"
+с наименьшими измененями конфигурации перед запуском хорошо работает именно последний, "bitnami":
 ```vi@...:~$  docker pull ubuntu/kafka
-...
 docker.io/ubuntu/kafka:latest
-
 vi@...:~$ docker pull bitnami/kafka
-...
-docker.io/bitnami/kafka:latest```
-
+docker.io/bitnami/kafka:latest
+```
 
 Теперь, когда этот образ есть, можем выполнить его запуск:
 ```vi@...:~$  curl -sSL https://raw.githubusercontent.com/bitnami/containers/main/bitnami/kafka/docker-compose.yml > docker-compose.yml
@@ -51,7 +45,7 @@ vi@...:~$ docker-compose up -d```
  ⠿ Container vi-kafka-1        Started                                                                                                                                                                        2.6s
 ```
 
-Посмотрим теперь на запущенные контейнеры docker:
+Посмотрим теперь на запущенные контейнеры Docker:
 ```vi@...:~$ docker ps
 CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS          PORTS                                                                     NAMES
 d5a7642e45d0   bitnami/kafka:3.3       "/opt/bitnami/script…"   41 minutes ago   Up 41 minutes   0.0.0.0:9092->9092/tcp, :::9092->9092/tcp                                 vi-kafka-1
@@ -123,5 +117,4 @@ kafka 16:34:13.37 Submit issues and feature requests at https://github.com/bitna
 ```vi@...:~$ docker exec vi-kafka-1 kafka-topics.sh --bootstrap-server localhost:9092 --list```
 В результате, видим: ```orders```
 
-Мы видим, что топик “orders” появился:
-Далее можно будет попробовать организовать отправку сообщений на этот топик.
+Мы видим, что топик "orders" появился:
