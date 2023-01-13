@@ -17,13 +17,17 @@
 * Ubuntu                 Running         2
 ```
 А теперь выполяем запуск, пользователь, для примера, "vi":
-```PS C:\Users\vyuivanov> wsl --distribution Ubuntu --user vi```
-
-Есть несколько образов Kafka, это "ubuntu/kafka" и "bitnami/kafka"
-с наименьшими измененями конфигурации перед запуском хорошо работает именно последний, "bitnami":
+```
+PS C:\Users\vyuivanov> wsl --distribution Ubuntu --user vi
+```
+С этого момента работем уже в консоли Ubuntu, которая должна открыться после предыдущей команды.
+Перед загрузкой образа kafka, которую мы выполним ниже, необходимо активировать службу docker, если этого ещё не сделано:
+```
+> sudo service docker start
+```
+Теперь можно подтягивать образы docker. Есть несколько образов Kafka, это "ubuntu/kafka" и "bitnami/kafka"
+с наименьшими измененями конфигурации перед запуском хорошо работает именно последний, "bitnami", который мы загрузим командой pull:
 ``` 
-> docker pull ubuntu/kafka
-docker.io/ubuntu/kafka:latest
 > docker pull bitnami/kafka
 docker.io/bitnami/kafka:latest
 ```
